@@ -5,8 +5,8 @@ Cada R$ 1,00 gasto no freezer da sede = **2 pontos** no clube da Luna (lunagelat
 ## Fluxo
 1. O cliente le o QR code no freezer, abre a pagina (`public/index.html`), informa nome, CPF, data, valor, NSU e anexa a foto do comprovante.
 2. O envio vai para o Supabase (tabela `bf_comprovantes` + bucket privado `bf-comprovantes`) com status `pendente`. O publico so consegue **enviar**; nao le, altera nem apaga nada (RLS).
-3. No painel do Supabase voce confere a foto (Storage > bf-comprovantes) contra o valor informado e muda o `status` para `aprovado` (ou `rejeitado`).
-4. Exporte a tabela `bf_comprovantes` em CSV (Table Editor > Export) e rode `python calcular_pontos.py exportacao.csv`.
+3. A conferencia e feita em https://blackfridayluna.vercel.app/validar (login do sistema Luna; so perfis master ou marketing). A pagina mostra a foto ao lado dos dados e tem os botoes Aprovar/Rejeitar.
+4. Na mesma pagina, o botao "CSV dos aprovados" baixa o arquivo. Rode `cd pontos && python calcular_pontos.py arquivo.csv`.
 5. Suba a aba **Pontos** (CPF + pontos) no programa de fidelidade.
 
 ## Publicacao do formulario

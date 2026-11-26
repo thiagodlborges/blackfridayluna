@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Luna — Validação de comprovantes</title>
+<style>
+  :root{--bg:#f6f1ec;--card:#fff;--ink:#2b2220;--mut:#7a6a64;--brand:#c2185b;--ok:#2e7d32;--err:#c62828;--line:#e3d8d0}
+  @media (prefers-color-scheme:dark){:root{--bg:#1c1614;--card:#2a211e;--ink:#f4ebe6;--mut:#b5a39b;--line:#443733}}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  header h1{font-size:1.05rem;margin:0;flex:1}
+  main{max-width:960px;margin:0 auto;padding:16px}
+  .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .tab{padding:8px 14px;border:1px solid var(--line);border-radius:99px;background:var(--card);color:var(--ink);cursor:pointer;font-weight:600}
+  .tab.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  button,input{font:inherit} input{padding:10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;width:100%}
+  .btn{padding:9px 14px;border:0;border-radius:8px;background:var(--brand);color:#fff;font-weight:700;cursor:pointer}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)} .btn.ok{background:var(--ok)} .btn.no{background:var(--err)}
+  .btn:disabled{opacity:.5}
+  .login{max-width:360px;margin:12vh auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .login label{display:block;margin:12px 0 4px;font-weight:600}
+  .grid{display:grid;gap:12px;grid-template-columns:1fr}
+  @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+  .foto{background:#0002;height:240px;display:flex;align-items:center;justify-content:center;cursor:zoom-in}
+  .foto img{max-width:100%;max-height:100%;object-fit:contain}
+  .info{padding:12px;display:grid;grid-template-columns:auto 1fr;gap:2px 10px}
+  .info b{color:var(--mut);font-weight:600} .big{font-size:1.2rem;font-weight:800}
+  .aviso{background:#ff980022;color:inherit;padding:6px 12px;font-size:.85rem}
+  .acoes{padding:0 12px 12px;display:flex;gap:8px;flex-wrap:wrap} .acoes input{flex:1 1 100%}
+  .acoes .btn{flex:1}
+  .vazio,.msg{color:var(--mut);padding:30px;text-align:center}
+  .err{color:var(--err);min-height:1.2em;margin-top:10px}
+  .resumo{color:var(--mut);margin:0 0 12px}
+  .hide{display:none!important}
+  #zoom{position:fixed;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;z-index:9;cursor:zoom-out}
+  #zoom img{max-width:96vw;max-height:96vh}
+</style>
+</head>
+<body>
+<div id="login" class="login hide">
+  <h1 style="margin-top:0">Validação de comprovantes</h1>
+  <p class="resumo">Use seu e-mail e senha do sistema Luna. Acesso restrito a perfis master e marketing.</p>
+  <form id="fl">
+    <label for="em">E-mail</label><input id="em" type="email" autocomplete="username" required>
+    <label for="pw">Senha</label><input id="pw" type="password" autocomplete="current-password" required>
+    <div class="err" id="le" role="alert"></div>
+    <button class="btn" style="width:100%;margin-top:8px">Entrar</button>
+  </form>
+</div>
+
+<div id="app" class="hide">
+  <header>
+    <h1>Comprovantes — Pontos em dobro</h1>
+    <button class="btn ghost" id="csv">⬇ CSV dos aprovados</button>
+    <button class="btn ghost" id="sair">Sair</button>
+  </header>
+  <main>
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-s="pendente">Pendentes <span id="n-pendente"></span></button>
+      <button class="tab" data-s="aprovado">Aprovados <span id="n-aprovado"></span></button>
+      <button class="tab" data-s="rejeitado">Rejeitados <span id="n-rejeitado"></span></button>
+    </div>
+    <p class="resumo" id="resumo"></p>
+    <div class="err" id="erro" role="alert"></div>
+    <div class="grid" id="lista"></div>
+  </main>
+</div>
+<div id="zoom" class="hide"><img alt="Comprovante ampliado"></div>
+
+<script>
+const SB_URL="https://pbuhwpcpdcnaheaywmdv.supabase.co";
+const SB_KEY="sb_publishable_dz5zlJAkfMJ9CQ3V2WurJA_Kr4avoUU";
+const $=id=>document.getElementById(id);
+let sess=null, aba='pendente', rows=[];
+
+try{ sess=JSON.parse(sessionStorage.getItem('bf_sess')||'null'); }catch(e){}
+const save=s=>{ sess=s; try{ s?sessionStorage.setItem('bf_sess',JSON.stringify(s)):sessionStorage.removeItem('bf_sess'); }catch(e){} };
+
+async function auth(body,grant){
+  const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=${grant}`,{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json(); if(!r.ok) throw new Error(j.error_description||j.msg||'Falha no login');
+  save({access:j.access_token,refresh:j.refresh_token}); return j;
+}
+async function api(path,opt={},retry=true){
+  const r=await fetch(SB_URL+path,{...opt,headers:{apikey:SB_KEY,Authorization:'Bearer '+sess.access,'Content-Type':'application/json',...(opt.headers||{})}});
+  if(r.status===401&&retry&&sess.refresh){ try{ await auth({refresh_token:sess.refresh},'refresh_token'); return api(path,opt,false);}catch(e){ sair(); throw new Error('Sessão expirada. Entre novamente.'); } }
+  return r;
+}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cpfF=c=>c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
+const brl=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const dataF=d=>d.split('-').reverse().join('/');
+
+function mostrar(){ $('login').classList.toggle('hide',!!sess); $('app').classList.toggle('hide',!sess); }
+function sair(){ save(null); mostrar(); }
+$('sair').onclick=sair;
+
+$('fl').addEventListener('submit',async e=>{
+  e.preventDefault(); $('le').textContent='';
+  try{ await auth({email:$('em').value.trim(),password:$('pw').value},'password'); $('pw').value=''; mostrar(); carregar(); }
+  catch(x){ $('le').textContent='E-mail ou senha incorretos.'; }
+});
+
+async function contar(){
+  for(const s of ['pendente','aprovado','rejeitado']){
+    const r=await api(`/rest/v1/bf_comprovantes?select=id&status=eq.${s}`,{headers:{Prefer:'count=exact',Range:'0-0'}});
+    const t=(r.headers.get('content-range')||'').split('/')[1]; $('n-'+s).textContent=t?`(${t})`:'';
+  }
+}
+async function carregar(){
+  $('erro').textContent=''; $('lista').innerHTML='<div class="msg">Carregando…</div>';
+  try{
+    const r=await api(`/rest/v1/bf_comprovantes?select=*&status=eq.${aba}&order=criado_em.${aba==='pendente'?'asc':'desc'}&limit=200`);
+    if(r.status===403||r.status===401) throw new Error('Seu usuário não tem permissão para validar (precisa ser master ou marketing).');
+    if(!r.ok) throw new Error('Não foi possível carregar.');
+    rows=await r.json(); contar(); desenhar();
+  }catch(x){ $('lista').innerHTML=''; $('erro').textContent=x.message; }
+}
+function desenhar(){
+  const porCpf={}; rows.forEach(r=>{porCpf[r.cpf]=(porCpf[r.cpf]||0)+1;});
+  const tot=rows.reduce((s,r)=>s+Number(r.valor),0);
+  $('resumo').textContent=rows.length?`${rows.length} comprovante(s) • ${brl(tot)} • ${Math.floor(tot*2)} pontos`:'';
+  if(!rows.length){ $('lista').innerHTML=`<div class="vazio">Nada em "${aba}".</div>`; return; }
+  $('lista').innerHTML=rows.map(r=>`
+    <div class="card" data-id="${esc(r.id)}">
+      <div class="foto" data-path="${esc(r.foto_path)}"><span class="msg">Carregando foto…</span></div>
+      ${porCpf[r.cpf]>1?`<div class="aviso">⚠ Este CPF tem ${porCpf[r.cpf]} comprovantes nesta lista.</div>`:''}
+      <div class="info">
+        <b>Nome</b><span>${esc(r.nome)}</span>
+        <b>CPF</b><span>${esc(cpfF(r.cpf))}</span>
+        <b>Valor</b><span class="big">${brl(r.valor)} → ${Math.floor(Number(r.valor)*2)} pts</span>
+        <b>Data</b><span>${esc(dataF(r.data_compra))}</span>
+        <b>NSU</b><span>${esc(r.nsu)}</span>
+        ${r.observacao?`<b>Obs.</b><span>${esc(r.observacao)}</span>`:''}
+      </div>
+      <div class="acoes">
+        <input placeholder="Observação (opcional)" value="">
+        ${aba!=='aprovado'?'<button class="btn ok" data-a="aprovado">Aprovar</button>':''}
+        ${aba!=='rejeitado'?'<button class="btn no" data-a="rejeitado">Rejeitar</button>':''}
+        ${aba!=='pendente'?'<button class="btn ghost" data-a="pendente">Voltar p/ pendente</button>':''}
+      </div>
+    </div>`).join('');
+  document.querySelectorAll('.foto').forEach(async el=>{
+    try{
+      const r=await api(`/storage/v1/object/sign/bf-comprovantes/${el.dataset.path}`,{method:'POST',body:JSON.stringify({expiresIn:900})});
+      const j=await r.json(); if(!r.ok||!j.signedURL) throw 0;
+      const url=SB_URL+'/storage/v1'+j.signedURL;
+      el.innerHTML=''; const im=new Image(); im.alt='Comprovante'; im.src=url; el.appendChild(im); el.onclick=()=>{ $('zoom').querySelector('img').src=url; $('zoom').classList.remove('hide'); };
+    }catch(e){ el.innerHTML='<span class="msg">Foto indisponível</span>'; }
+  });
+}
+$('zoom').onclick=()=>$('zoom').classList.add('hide');
+$('lista').addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-a]'); if(!b) return;
+  const card=b.closest('.card'), obs=card.querySelector('input').value.trim()||null;
+  card.querySelectorAll('button').forEach(x=>x.disabled=true);
+  try{
+    const r=await api(`/rest/v1/bf_comprovantes?id=eq.${encodeURIComponent(card.dataset.id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({status:b.dataset.a,observacao:obs})});
+    const j=await r.json(); if(!r.ok||!j.length) throw new Error('Não foi possível salvar (sem permissão?).');
+    rows=rows.filter(x=>x.id!==card.dataset.id); desenhar(); contar();
+  }catch(x){ $('erro').textContent=x.message; card.querySelectorAll('button').forEach(x=>x.disabled=false); }
+});
+$('tabs').addEventListener('click',e=>{
+  const t=e.target.closest('.tab'); if(!t) return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t)); aba=t.dataset.s; carregar();
+});
+
+$('csv').onclick=async()=>{
+  $('erro').textContent='';
+  try{
+    let todos=[],from=0;
+    for(;;){
+      const r=await api(`/rest/v1/bf_comprovantes?select=cpf,nome,data_compra,valor,nsu,status&status=eq.aprovado&order=criado_em.asc`,{headers:{Range:`${from}-${from+999}`}});
+      if(!r.ok) throw new Error('Falha ao gerar o CSV.');
+      const j=await r.json(); todos=todos.concat(j); if(j.length<1000) break; from+=1000;
+    }
+    if(!todos.length) return $('erro').textContent='Não há comprovantes aprovados.';
+    const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
+    const linhas=['cpf;nome;data_compra;valor;id_comprovante;status',...todos.map(r=>[r.cpf,q(r.nome),r.data_compra,Number(r.valor).toFixed(2),q(r.nsu),r.status].join(';'))];
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿'+linhas.join('\n')],{type:'text/csv;charset=utf-8'}));
+    a.download='aprovados-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+  }catch(x){ $('erro').textContent=x.message; }
+};
+
+mostrar(); if(sess) carregar();
+</script>
+</body>
+</html>
