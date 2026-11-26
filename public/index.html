@@ -3,56 +3,96 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#6B1E2E">
 <title>Luna — Pontos em Dobro na Black Friday</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#fdf6f0;--card:#fff;--ink:#2b2220;--mut:#7a6a64;--brand:#c2185b;--ok:#2e7d32;--err:#c62828;--line:#e8dcd4}
-  @media (prefers-color-scheme:dark){:root{--bg:#1c1614;--card:#2a211e;--ink:#f4ebe6;--mut:#b5a39b;--line:#443733}}
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-  main{max-width:480px;margin:0 auto;padding:20px 16px 40px}
-  h1{font-size:1.5rem;margin:8px 0 4px} .sub{color:var(--mut);margin:0 0 16px}
-  .badge{display:inline-block;background:var(--brand);color:#fff;border-radius:99px;padding:4px 12px;font-weight:700;font-size:.85rem}
-  form,.msg{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
-  label{display:block;font-weight:600;margin:14px 0 6px} label small{font-weight:400;color:var(--mut)}
-  input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:1rem;background:transparent;color:inherit}
-  input:focus{outline:2px solid var(--brand);border-color:transparent}
-  button{width:100%;margin-top:20px;padding:14px;border:0;border-radius:10px;background:var(--brand);color:#fff;font-size:1.05rem;font-weight:700}
-  button:disabled{opacity:.6}
-  .err{color:var(--err);font-size:.9rem;margin-top:12px;min-height:1.2em} .ok{color:var(--ok)}
-  .lgpd{color:var(--mut);font-size:.8rem;margin-top:14px}
-  .hide{display:none} img#prev{max-width:100%;border-radius:10px;margin-top:8px}
+  :root{--bordo:#6B1E2E;--bordo-dark:#4A1220;--bordo-light:#8B3345;--creme:#F5EFE4;--creme-dark:#EDE4D4;
+        --marrom:#A0785A;--marrom-light:#C4A882;--text:#2C1810;--text-light:#6B4F3A;--white:#FDFAF6;--err:#B3261E;--ok:#2E6B3A}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--creme);color:var(--text);font:16px/1.5 'Jost',system-ui,sans-serif}
+  .top{background:var(--bordo);color:var(--creme);text-align:center;padding:14px 16px 12px}
+  .brand{font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:600;letter-spacing:.04em;line-height:1}
+  .brand small{display:block;font:500 .68rem 'Jost',system-ui,sans-serif;letter-spacing:.32em;text-transform:uppercase;color:var(--marrom-light);margin-top:5px}
+  .hero{background:linear-gradient(180deg,var(--bordo) 0,var(--bordo-dark) 100%);color:var(--creme);text-align:center;padding:26px 20px 64px}
+  .tag{display:inline-block;border:1px solid var(--marrom-light);color:var(--marrom-light);border-radius:99px;padding:4px 14px;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;font-weight:500}
+  .hero h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:2.5rem;line-height:1.05;margin:14px 0 10px}
+  .hero h1 em{color:var(--marrom-light);font-style:italic}
+  .hero p{margin:0 auto;max-width:360px;color:#F5EFE4cc;font-weight:300}
+  main{max-width:480px;margin:-40px auto 0;padding:0 16px 40px}
+  .steps{display:flex;gap:8px;margin-bottom:14px}
+  .step{flex:1;background:var(--white);border:1px solid var(--creme-dark);border-radius:12px;padding:10px 6px;text-align:center;font-size:.78rem;line-height:1.25;color:var(--text-light);box-shadow:0 2px 8px #4a122014}
+  .step b{display:flex;margin:0 auto 5px;width:24px;height:24px;border-radius:50%;background:var(--bordo);color:var(--creme);align-items:center;justify-content:center;font:600 .8rem 'Jost',system-ui,sans-serif}
+  form,.msg{background:var(--white);border:1px solid var(--creme-dark);border-radius:16px;padding:20px 18px;box-shadow:0 6px 24px #4a122018}
+  h2{font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--bordo-dark);margin:0 0 4px}
+  .lead{color:var(--text-light);font-size:.9rem;margin:0 0 6px}
+  label{display:block;font-weight:500;font-size:.88rem;color:var(--bordo-dark);margin:16px 0 6px}
+  label small{font-weight:300;color:var(--text-light)}
+  input{width:100%;padding:13px 14px;border:1.5px solid var(--creme-dark);border-radius:10px;font:inherit;color:var(--text);background:#fff;transition:border-color .15s,box-shadow .15s}
+  input:focus{outline:none;border-color:var(--bordo);box-shadow:0 0 0 3px #6b1e2e22}
+  input[type=file]{padding:10px;border-style:dashed;background:var(--creme)}
+  input[type=file]::file-selector-button{margin-right:10px;border:0;border-radius:8px;background:var(--marrom);color:#fff;padding:8px 12px;font:500 .85rem 'Jost',system-ui,sans-serif;cursor:pointer}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  button{width:100%;margin-top:22px;padding:15px;border:0;border-radius:12px;background:var(--bordo);color:var(--creme);font:600 1.02rem 'Jost',system-ui,sans-serif;letter-spacing:.02em;cursor:pointer;box-shadow:0 4px 14px #6b1e2e44;transition:background .15s,transform .05s}
+  button:hover{background:var(--bordo-light)} button:active{transform:translateY(1px)} button:disabled{opacity:.6;cursor:default}
+  .err{color:var(--err);font-size:.88rem;margin-top:12px;min-height:1.2em;font-weight:500}
+  .lgpd{color:var(--text-light);font-size:.76rem;margin:14px 0 0;line-height:1.45}
+  .hide{display:none} img#prev{max-width:100%;max-height:220px;border-radius:10px;margin-top:10px;border:1px solid var(--creme-dark)}
+  #done{text-align:center;padding:30px 20px}
+  #done .ic{width:64px;height:64px;border-radius:50%;background:var(--bordo);color:var(--creme);display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 12px}
+  #done h2{font-size:1.9rem} #done p{color:var(--text-light)}
+  #done button{background:transparent;color:var(--bordo);border:1.5px solid var(--bordo);box-shadow:none}
+  footer{text-align:center;color:var(--text-light);font-size:.75rem;padding:0 16px 28px}
+  @media(max-width:380px){.hero h1{font-size:2.1rem}.row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
+<div class="top"><div class="brand">Luna<small>Gelato e Caffè</small></div></div>
+<section class="hero">
+  <span class="tag">Black Friday · 26/11 a 02/12</span>
+  <h1>Pontos em <em>dobro</em><br>no freezer da sede</h1>
+  <p>Cada R$ 1,00 gasto vale <strong>2 pontos</strong> no clube da Luna. É só enviar o comprovante.</p>
+</section>
 <main>
-  <span class="badge">Black Friday</span>
-  <h1>Pontos em dobro no freezer</h1>
-  <p class="sub">Comprou no freezer da sede? Envie o comprovante da maquininha e ganhe <strong>2 pontos por real gasto</strong> no clube da Luna. Vale de 26/11 a 02/12.</p>
+  <div class="steps" aria-label="Como funciona">
+    <div class="step"><b>1</b>Compre no freezer</div>
+    <div class="step"><b>2</b>Envie o comprovante</div>
+    <div class="step"><b>3</b>Receba o dobro de pontos</div>
+  </div>
 
   <form id="f" novalidate>
+    <h2>Envie seu comprovante</h2>
+    <p class="lead">Use o mesmo CPF do seu cadastro no clube da Luna.</p>
     <label for="nome">Nome completo</label>
     <input id="nome" autocomplete="name" required>
-    <label for="cpf">CPF <small>(o mesmo cadastrado no clube da Luna)</small></label>
+    <label for="cpf">CPF</label>
     <input id="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required>
-    <label for="data">Data da compra</label>
-    <input id="data" type="date" min="2026-11-26" max="2026-12-02" required>
-    <label for="valor">Valor pago (R$)</label>
-    <input id="valor" inputmode="decimal" placeholder="0,00" required>
-    <label for="nsu">NSU / código de autorização <small>(consta no comprovante)</small></label>
+    <div class="row">
+      <div><label for="data">Data da compra</label>
+      <input id="data" type="date" min="2026-11-26" max="2026-12-02" required></div>
+      <div><label for="valor">Valor pago (R$)</label>
+      <input id="valor" inputmode="decimal" placeholder="0,00" required></div>
+    </div>
+    <label for="nsu">NSU / autorização <small>(no comprovante da maquininha)</small></label>
     <input id="nsu" autocomplete="off" required>
     <label for="foto">Foto do comprovante</label>
     <input id="foto" type="file" accept="image/*" required>
     <img id="prev" class="hide" alt="Pré-visualização do comprovante">
     <div class="err" id="erro" role="alert"></div>
     <button id="btn" type="submit">Enviar comprovante</button>
-    <p class="lgpd">Usamos seu nome, CPF e comprovante apenas para creditar os pontos desta campanha no clube da Luna. Os pontos só são creditados após conferência do comprovante.</p>
+    <p class="lgpd">Usamos seu nome, CPF e comprovante apenas para creditar os pontos desta campanha no clube da Luna. Os pontos são creditados após a conferência do comprovante.</p>
   </form>
 
   <div id="done" class="msg hide">
-    <h2 class="ok">Comprovante enviado!</h2>
+    <div class="ic">✓</div>
+    <h2>Comprovante enviado!</h2>
     <p>Vamos conferir e creditar seus pontos em dobro no clube da Luna. Você pode enviar outra compra quando quiser.</p>
     <button id="outro" type="button">Enviar outra compra</button>
   </div>
 </main>
+<footer>Luna Gelato e Caffè · Campanha válida para compras no freezer da sede</footer>
 
 <script>
 const SB_URL = "https://pbuhwpcpdcnaheaywmdv.supabase.co";
