@@ -14,15 +14,15 @@ Cada R$ 1,00 gasto no freezer da sede = **2 pontos** no clube da Luna (lunagelat
 
 ## Uso
 ```bash
-pip install -r requirements.txt
-python calcular_pontos.py exportacao.csv     # ou data/compras.csv (padrao)
-python -m unittest discover -s tests
+pip install -r pontos/requirements.txt
+cd pontos && python calcular_pontos.py exportacao.csv
+cd pontos && python -m unittest discover -s tests
 ```
 
-## Formato de `data/compras.csv` (separador `;`)
+## Formato de `pontos/data/compras.csv` (separador `;`)
 `cpf;nome;data_compra;valor;id_comprovante` — data `AAAA-MM-DD` ou `DD/MM/AAAA`; valor `18,50`.
 
-## Regras (em `config.json`)
+## Regras (em `pontos/config.json`)
 - `pontos_por_real`: 2.
 - Período: `periodo_inicio` / `periodo_fim`. Compras fora dele são rejeitadas.
 - Pontos = piso(total gasto do CPF no período × 2): centavos que não fecham 1 ponto inteiro são descartados uma única vez por CPF, não por compra.
@@ -32,4 +32,4 @@ python -m unittest discover -s tests
 ## Excel gerado
 Abas: **Pontos** (uma linha por CPF, com total), **Compras aceitas** (auditoria), **Rejeitadas**.
 
-> Os dados contêm CPF. Se o repositório for no GitHub, mantenha-o **privado** e não suba `data/compras.csv` real nem `saida/` (já no `.gitignore`).
+> Os dados contêm CPF. Se o repositório for no GitHub, mantenha-o **privado** e não suba `pontos/data/compras.csv` real nem `saida/` (já no `.gitignore`).
