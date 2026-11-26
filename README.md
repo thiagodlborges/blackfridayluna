@@ -3,14 +3,14 @@
 Cada R$ 1,00 gasto no freezer da sede = **2 pontos** no clube da Luna (lunagelato.com.br).
 
 ## Fluxo
-1. O cliente le o QR code no freezer, abre a pagina (`index.html`), informa nome, CPF, data, valor, NSU e anexa a foto do comprovante.
+1. O cliente le o QR code no freezer, abre a pagina (`public/index.html`), informa nome, CPF, data, valor, NSU e anexa a foto do comprovante.
 2. O envio vai para o Supabase (tabela `bf_comprovantes` + bucket privado `bf-comprovantes`) com status `pendente`. O publico so consegue **enviar**; nao le, altera nem apaga nada (RLS).
 3. No painel do Supabase voce confere a foto (Storage > bf-comprovantes) contra o valor informado e muda o `status` para `aprovado` (ou `rejeitado`).
 4. Exporte a tabela `bf_comprovantes` em CSV (Table Editor > Export) e rode `python calcular_pontos.py exportacao.csv`.
 5. Suba a aba **Pontos** (CPF + pontos) no programa de fidelidade.
 
 ## Publicacao do formulario
-`index.html` e uma pagina estatica unica. Publique em Vercel ou Netlify (importando este repositorio privado) e gere o QR code do endereco publico. A chave no HTML e a *publishable* do Supabase: so permite enviar dados, nunca le-los.
+`public/index.html` e uma pagina estatica unica. Publique em Vercel ou Netlify (importando este repositorio privado) e gere o QR code do endereco publico. A chave no HTML e a *publishable* do Supabase: so permite enviar dados, nunca le-los.
 
 ## Uso
 ```bash
