@@ -10,6 +10,8 @@ Cada R$ 1,00 gasto no freezer da sede = **2 pontos** no clube da Luna (lunagelat
 5. Suba a aba **Pontos** (CPF + pontos) no programa de fidelidade.
 
 ## Publicacao do formulario
+Endereco publico (vai no QR code): https://blackfridayluna.vercel.app/
+
 `public/index.html` e uma pagina estatica unica. Publique em Vercel ou Netlify (importando este repositorio privado) e gere o QR code do endereco publico. A chave no HTML e a *publishable* do Supabase: so permite enviar dados, nunca le-los.
 
 ## Uso
