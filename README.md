@@ -3,15 +3,19 @@
 Cada R$ 1,00 gasto no freezer da sede = **2 pontos** no clube da Luna (lunagelato.com.br).
 
 ## Fluxo
-1. O colaborador se cadastra no clube, compra no freezer e envia o comprovante da maquininha pelo site.
-2. Os dados do comprovante (CPF, nome, data, valor, NSU) são registrados em `data/compras.csv`.
-3. `python calcular_pontos.py` valida, soma por CPF e gera `saida/pontos_blackfriday.xlsx`.
-4. Você sobe a aba **Pontos** (CPF + pontos a creditar) no programa de fidelidade.
+1. O cliente le o QR code no freezer, abre a pagina (`index.html`), informa nome, CPF, data, valor, NSU e anexa a foto do comprovante.
+2. O envio vai para o Supabase (tabela `bf_comprovantes` + bucket privado `bf-comprovantes`) com status `pendente`. O publico so consegue **enviar**; nao le, altera nem apaga nada (RLS).
+3. No painel do Supabase voce confere a foto (Storage > bf-comprovantes) contra o valor informado e muda o `status` para `aprovado` (ou `rejeitado`).
+4. Exporte a tabela `bf_comprovantes` em CSV (Table Editor > Export) e rode `python calcular_pontos.py exportacao.csv`.
+5. Suba a aba **Pontos** (CPF + pontos) no programa de fidelidade.
+
+## Publicacao do formulario
+`index.html` e uma pagina estatica unica. Publique em Vercel ou Netlify (importando este repositorio privado) e gere o QR code do endereco publico. A chave no HTML e a *publishable* do Supabase: so permite enviar dados, nunca le-los.
 
 ## Uso
 ```bash
 pip install -r requirements.txt
-python calcular_pontos.py            # usa data/compras.csv e config.json
+python calcular_pontos.py exportacao.csv     # ou data/compras.csv (padrao)
 python -m unittest discover -s tests
 ```
 
@@ -22,6 +26,7 @@ python -m unittest discover -s tests
 - `pontos_por_real`: 2.
 - Período: `periodo_inicio` / `periodo_fim`. Compras fora dele são rejeitadas.
 - Pontos = piso(total gasto do CPF no período × 2): centavos que não fecham 1 ponto inteiro são descartados uma única vez por CPF, não por compra.
+- Linhas com `status` diferente de `aprovado` nao pontuam (`rejeitado` e ignorado; `pendente` aparece na aba Rejeitadas para voce lembrar de conferir).
 - Rejeitadas (aba **Rejeitadas**, com o motivo): CPF inválido, valor ≤ 0, fora do período, sem NSU, comprovante duplicado.
 
 ## Excel gerado

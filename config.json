@@ -1,6 +1,6 @@
 {
   "pontos_por_real": 2,
-  "periodo_inicio": "2026-11-27",
-  "periodo_fim": "2026-11-27",
+  "periodo_inicio": "2026-11-26",
+  "periodo_fim": "2026-12-02",
   "arredondamento": "pontos = piso(total gasto do CPF no periodo x pontos_por_real)"
 }

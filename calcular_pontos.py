@@ -3,7 +3,7 @@
 
 Uso: python calcular_pontos.py [data/compras.csv] [saida/pontos_blackfriday.xlsx]
 
-Entrada (CSV com ';'): cpf;nome;data_compra;valor;id_comprovante
+Entrada (CSV com ';' ou ',', inclusive a exportacao da tabela bf_comprovantes do Supabase): cpf;nome;data_compra;valor;id_comprovante
  - data_compra: AAAA-MM-DD ou DD/MM/AAAA
  - valor: aceita 18,50 / 18.50 / 1.234,56
  - id_comprovante: NSU/autorizacao da maquininha (evita pontuar o mesmo comprovante 2x)
@@ -65,9 +65,19 @@ def processar(caminho_csv, config):
     aceitas, rejeitadas, vistos = [], [], set()
 
     with open(caminho_csv, newline="", encoding="utf-8-sig") as f:
-        for n, linha in enumerate(csv.DictReader(f, delimiter=";"), start=2):
+        amostra = f.readline()
+        f.seek(0)
+        delim = ";" if amostra.count(";") >= amostra.count(",") else ","
+        for n, linha in enumerate(csv.DictReader(f, delimiter=delim), start=2):
+            # exportacao do Supabase usa a coluna "nsu" e traz "status"
+            if "id_comprovante" not in linha and "nsu" in linha:
+                linha["id_comprovante"] = linha["nsu"]
             def rej(motivo):
                 rejeitadas.append({"linha": n, **linha, "motivo": motivo})
+            if "status" in linha and (linha["status"] or "").strip().lower() != "aprovado":
+                if (linha["status"] or "").strip().lower() == "rejeitado":
+                    continue
+                rej("Comprovante ainda nao aprovado (status: %s)" % (linha["status"] or "vazio")); continue
             try:
                 cpf = so_digitos(linha["cpf"])
                 if not cpf_valido(cpf):

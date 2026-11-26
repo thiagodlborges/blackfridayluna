@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luna — Pontos em Dobro na Black Friday</title>
+<style>
+  :root{--bg:#fdf6f0;--card:#fff;--ink:#2b2220;--mut:#7a6a64;--brand:#c2185b;--ok:#2e7d32;--err:#c62828;--line:#e8dcd4}
+  @media (prefers-color-scheme:dark){:root{--bg:#1c1614;--card:#2a211e;--ink:#f4ebe6;--mut:#b5a39b;--line:#443733}}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  main{max-width:480px;margin:0 auto;padding:20px 16px 40px}
+  h1{font-size:1.5rem;margin:8px 0 4px} .sub{color:var(--mut);margin:0 0 16px}
+  .badge{display:inline-block;background:var(--brand);color:#fff;border-radius:99px;padding:4px 12px;font-weight:700;font-size:.85rem}
+  form,.msg{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+  label{display:block;font-weight:600;margin:14px 0 6px} label small{font-weight:400;color:var(--mut)}
+  input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:1rem;background:transparent;color:inherit}
+  input:focus{outline:2px solid var(--brand);border-color:transparent}
+  button{width:100%;margin-top:20px;padding:14px;border:0;border-radius:10px;background:var(--brand);color:#fff;font-size:1.05rem;font-weight:700}
+  button:disabled{opacity:.6}
+  .err{color:var(--err);font-size:.9rem;margin-top:12px;min-height:1.2em} .ok{color:var(--ok)}
+  .lgpd{color:var(--mut);font-size:.8rem;margin-top:14px}
+  .hide{display:none} img#prev{max-width:100%;border-radius:10px;margin-top:8px}
+</style>
+</head>
+<body>
+<main>
+  <span class="badge">Black Friday</span>
+  <h1>Pontos em dobro no freezer</h1>
+  <p class="sub">Comprou no freezer da sede? Envie o comprovante da maquininha e ganhe <strong>2 pontos por real gasto</strong> no clube da Luna. Vale de 26/11 a 02/12.</p>
+
+  <form id="f" novalidate>
+    <label for="nome">Nome completo</label>
+    <input id="nome" autocomplete="name" required>
+    <label for="cpf">CPF <small>(o mesmo cadastrado no clube da Luna)</small></label>
+    <input id="cpf" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" required>
+    <label for="data">Data da compra</label>
+    <input id="data" type="date" min="2026-11-26" max="2026-12-02" required>
+    <label for="valor">Valor pago (R$)</label>
+    <input id="valor" inputmode="decimal" placeholder="0,00" required>
+    <label for="nsu">NSU / código de autorização <small>(consta no comprovante)</small></label>
+    <input id="nsu" autocomplete="off" required>
+    <label for="foto">Foto do comprovante</label>
+    <input id="foto" type="file" accept="image/*" required>
+    <img id="prev" class="hide" alt="Pré-visualização do comprovante">
+    <div class="err" id="erro" role="alert"></div>
+    <button id="btn" type="submit">Enviar comprovante</button>
+    <p class="lgpd">Usamos seu nome, CPF e comprovante apenas para creditar os pontos desta campanha no clube da Luna. Os pontos só são creditados após conferência do comprovante.</p>
+  </form>
+
+  <div id="done" class="msg hide">
+    <h2 class="ok">Comprovante enviado!</h2>
+    <p>Vamos conferir e creditar seus pontos em dobro no clube da Luna. Você pode enviar outra compra quando quiser.</p>
+    <button id="outro" type="button">Enviar outra compra</button>
+  </div>
+</main>
+
+<script>
+const SB_URL = "https://pbuhwpcpdcnaheaywmdv.supabase.co";
+const SB_KEY = "sb_publishable_dz5zlJAkfMJ9CQ3V2WurJA_Kr4avoUU"; // chave publica (so permite enviar)
+const $ = id => document.getElementById(id);
+
+function cpfValido(c){
+  if(!/^\d{11}$/.test(c) || /^(\d)\1{10}$/.test(c)) return false;
+  for(const n of [9,10]){
+    let s=0; for(let i=0;i<n;i++) s+= +c[i]*(n+1-i);
+    if(((s*10)%11)%10 !== +c[n]) return false;
+  }
+  return true;
+}
+$('cpf').addEventListener('input', e=>{
+  const d=e.target.value.replace(/\D/g,'').slice(0,11);
+  e.target.value=d.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+});
+const hoje=new Date(); const iso=new Date(hoje-hoje.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+$('data').value = iso<'2026-11-26'?'2026-11-26':(iso>'2026-12-02'?'2026-12-02':iso);
+
+// reduz a foto para caber no limite (5 MB) e acelerar o envio no 4G
+function comprimir(file){
+  return new Promise((ok,ko)=>{
+    const img=new Image(), url=URL.createObjectURL(file);
+    img.onload=()=>{
+      const m=1800, k=Math.min(1,m/Math.max(img.width,img.height));
+      const c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      c.toBlob(b=>b?ok(b):ko(new Error('foto')),'image/jpeg',0.85); URL.revokeObjectURL(url);
+    };
+    img.onerror=()=>ko(new Error('foto')); img.src=url;
+  });
+}
+$('foto').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f){$('prev').classList.add('hide');return;}
+  $('prev').src=URL.createObjectURL(f); $('prev').classList.remove('hide');
+});
+
+$('f').addEventListener('submit', async e=>{
+  e.preventDefault(); $('erro').textContent='';
+  const nome=$('nome').value.trim(), cpf=$('cpf').value.replace(/\D/g,''),
+        nsu=$('nsu').value.trim(), data=$('data').value, file=$('foto').files[0],
+        valor=parseFloat($('valor').value.replace(/\./g,'').replace(',','.'));
+  if(nome.length<3) return $('erro').textContent='Informe seu nome completo.';
+  if(!cpfValido(cpf)) return $('erro').textContent='CPF inválido.';
+  if(!data||data<'2026-11-26'||data>'2026-12-02') return $('erro').textContent='A data deve estar entre 26/11 e 02/12.';
+  if(!(valor>=1&&valor<=2000)) return $('erro').textContent='Informe o valor pago (entre R$ 1,00 e R$ 2.000,00).';
+  if(nsu.length<3) return $('erro').textContent='Informe o NSU do comprovante.';
+  if(!file) return $('erro').textContent='Anexe a foto do comprovante.';
+  $('btn').disabled=true; $('btn').textContent='Enviando…';
+  try{
+    const blob=await comprimir(file);
+    const path='comprovantes/'+crypto.randomUUID()+'.jpg';
+    const h={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY};
+    let r=await fetch(`${SB_URL}/storage/v1/object/bf-comprovantes/${path}`,{method:'POST',headers:{...h,'Content-Type':'image/jpeg'},body:blob});
+    if(!r.ok) throw new Error('upload');
+    r=await fetch(`${SB_URL}/rest/v1/bf_comprovantes`,{method:'POST',
+      headers:{...h,'Content-Type':'application/json',Prefer:'return=minimal'},
+      body:JSON.stringify({nome,cpf,data_compra:data,valor:+valor.toFixed(2),nsu,foto_path:path})});
+    if(r.status===409) throw new Error('dup');
+    if(!r.ok) throw new Error('insert');
+    $('f').classList.add('hide'); $('done').classList.remove('hide'); window.scrollTo(0,0);
+  }catch(x){
+    $('erro').textContent = x.message==='dup' ? 'Este comprovante (NSU) já foi enviado.'
+      : 'Não foi possível enviar agora. Confira sua conexão e tente novamente.';
+  }finally{ $('btn').disabled=false; $('btn').textContent='Enviar comprovante'; }
+});
+$('outro').addEventListener('click',()=>{
+  $('f').reset(); $('prev').classList.add('hide'); $('data').value=$('data').value||iso;
+  $('done').classList.add('hide'); $('f').classList.remove('hide');
+});
+</script>
+</body>
+</html>
